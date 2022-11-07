@@ -1,0 +1,5 @@
+{
+  "ProjectOverviewURL": "https://lcap-jp.launchpad.cfapps.jp10.hana.ondemand.com/lcapMKTest1.MKTest1Launchpad-1.0.0",
+  "DeployedUTCTime": "2022-11-01T08:48:25.921Z",
+  "ApplicationLogURL": "https://logs.cf.jp10.hana.ondemand.com/app/dashboards#/view/Overview?_g=(filters:!((query:(match_phrase:(component_name:MKTest1-srv)))))"
+}

@@ -1,0 +1,201 @@
+_schema-version: '3.1'
+ID: MKTest1
+version: 1.0.0
+description: A simple CAP project.
+parameters:
+  deploy_mode: html5-repo
+  enable-parallel-deployments: true
+build-parameters:
+  before-all:
+    - builder: custom
+      commands:
+        - rm -rf build/ui-deployer
+        - mkdir -p build/ui-deployer
+        - rm -rf build/dist
+        - mkdir -p build/dist
+    - builder: custom
+      commands:
+        - npm install --production
+        - >-
+          bash -c "cds -v | grep 'cds-dk' || npm i --production --no-save
+          @sap/cds-dk @sap/mdk-tools"
+        - bash -c "export PATH=$PATH:$(pwd)/node_modules/.bin"
+        - cds build --production
+modules:
+  - name: MKTest1-MyApplication
+    type: html5
+    path: app/MyApplication
+    build-parameters:
+      builder: custom
+      commands:
+        - mdk build --target module --ui5 --forceUpdate
+        - bash -c "cd Web/MDKModule && rm -rf .npmrc && npm install"
+        - bash -c "cd Web/MDKModule && npm run build"
+        - >-
+          bash -c "mv Web/MDKModule/MDKModule-content.zip
+          ../../build/dist/MyApplication.zip"
+        - rm -rf Web/MDKModule/dist
+      _artifactName: MyApplication.zip
+      supported-platforms: []
+      build-result: ../../build/dist
+  - name: MKTest1-db-deployer
+    type: hdb
+    path: gen/db
+    parameters:
+      buildpack: nodejs_buildpack
+    build-parameters:
+      builder: npm
+      ignore:
+        - node_modules
+        - package-lock.json
+    requires:
+      - name: MKTest1-service-uaa
+      - name: MKTest1-service-db
+  - name: MKTest1-srv
+    type: nodejs
+    path: gen/srv
+    parameters:
+      memory: 256MB
+    provides:
+      - name: srv-api
+        properties:
+          srv-url: ${default-url}
+    build-parameters:
+      builder: npm
+      ignore:
+        - node_modules
+        - package-lock.json
+    requires:
+      - name: MKTest1-service-uaa
+      - name: MKTest1-service-db
+      - name: MKTest1-service-destination
+      - name: MKTest1-service-metadata
+      - name: MKTest1-service-connectivity
+      - name: MKTest1-service-logs
+  - name: MKTest1-aux-destinations
+    type: com.sap.application.content
+    parameters:
+      content:
+        subaccount:
+          existing_destinations_policy: update
+          destinations:
+            - Authentication: OAuth2UserTokenExchange
+              Name: MKTest1-service-uaa
+              ServiceInstanceName: MKTest1-uaa
+              ServiceKeyName: MKTest1-uaa-key
+              sap.cloud.service: lcap.MKTest1
+            - Authentication: OAuth2UserTokenExchange
+              Name: MKTest1-app-srv
+              TokenServiceInstanceName: MKTest1-uaa
+              TokenServiceKeyName: MKTest1-uaa-key
+              URL: ~{srv-api/srv-url}
+              sap.cloud.service: lcap.MKTest1
+            - Name: MKTest1-service-html5-apps-repo-host
+              ServiceInstanceName: MKTest1-html5-apps-repo-host
+              ServiceKeyName: MKTest1-html5-apps-repo-host-key
+              sap.cloud.service: lcap.MKTest1
+    build-parameters:
+      no-source: true
+    requires:
+      - name: MKTest1-service-uaa
+        parameters:
+          service-key:
+            name: MKTest1-uaa-key
+      - name: srv-api
+      - name: MKTest1-service-html5-apps-repo-host
+        parameters:
+          service-key:
+            name: MKTest1-html5-apps-repo-host-key
+      - name: MKTest1-service-destination
+        parameters:
+          content-target: true
+  - name: MKTest1-launchpad
+    type: html5
+    path: build/launchpad
+    build-parameters:
+      builder: custom
+      commands:
+        - npm install
+        - >-
+          npx -p @ui5/cli ui5 build --dest dist
+          --include-task=generateManifestBundle
+          --include-task=generateCachebusterInfo
+        - bash -c "cd dist && npx bestzip ../../../build/dist/launchpad.zip *"
+        - rm -rf dist
+      _artifactName: launchpad.zip
+      supported-platforms: []
+      build-result: ../../build/dist
+  - name: MKTest1-aux-ui-deployer
+    type: com.sap.application.content
+    path: build/ui-deployer
+    build-parameters:
+      build-result: resources
+      requires:
+        - name: MKTest1-MyApplication
+          artifacts:
+            - MyApplication.zip
+          target-path: resources
+        - name: MKTest1-launchpad
+          artifacts:
+            - launchpad.zip
+          target-path: resources
+    requires:
+      - name: MKTest1-service-html5-apps-repo-host
+        parameters:
+          content-target: true
+resources:
+  - type: org.cloudfoundry.managed-service
+    name: MKTest1-service-uaa
+    parameters:
+      service: xsuaa
+      service-plan: application
+      service-name: MKTest1-uaa
+      path: xs-security.json
+      config:
+        xsappname: MKTest1-${space}
+        role-collections:
+          - description: PersonalDataManager
+            name: MKTest1-PersonalDataManager-${space}
+            role-template-references:
+              - $XSAPPNAME.PersonalDataManager
+  - type: org.cloudfoundry.managed-service
+    name: MKTest1-service-db
+    parameters:
+      service: hana
+      service-plan: hdi-shared
+      service-name: MKTest1-db
+  - type: org.cloudfoundry.managed-service
+    name: MKTest1-service-destination
+    parameters:
+      service: destination
+      service-plan: lite
+      service-name: MKTest1-destination
+      config:
+        HTML5Runtime_enabled: true
+        version: 1.0.0
+  - type: org.cloudfoundry.user-provided-service
+    name: MKTest1-service-metadata
+    parameters:
+      service: metadata
+      service-plan: standard
+      service-name: MKTest1-metadata
+      config:
+        default-domain: ${default-domain}
+  - type: org.cloudfoundry.managed-service
+    name: MKTest1-service-connectivity
+    parameters:
+      service: connectivity
+      service-plan: lite
+      service-name: MKTest1-connectivity
+  - type: org.cloudfoundry.managed-service
+    name: MKTest1-service-logs
+    parameters:
+      service: application-logs
+      service-plan: lite
+      service-name: MKTest1-logs
+  - type: org.cloudfoundry.managed-service
+    name: MKTest1-service-html5-apps-repo-host
+    parameters:
+      service: html5-apps-repo
+      service-plan: app-host
+      service-name: MKTest1-html5-apps-repo-host
