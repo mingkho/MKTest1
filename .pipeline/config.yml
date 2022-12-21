@@ -27,6 +27,8 @@ stages:
     cfCredentialsId: ""
     tmsUpload: false
 steps:
+  mtaBuild:
+    dockerImage: "devxci/mbtci-java11-node14@sha256:acbb0ea07a34d57d8cccb1a729109fbacd7489eb51bdc171b4d7b59387cc2cf5"
   artifactPrepareVersion:
     versioningType: "cloud_noTag"
   cloudFoundryDeploy:
