@@ -7,7 +7,9 @@
       "type": "shell",
       "label": "cds watch",
       "command": "cds",
-      "args": ["watch"],
+      "args": [
+        "watch"
+      ],
       "group": {
         "kind": "build",
         "isDefault": true
@@ -18,8 +20,33 @@
       "type": "shell",
       "label": "cds run",
       "command": "cds",
-      "args": ["run", "--with-mocks", "--in-memory?"],
+      "args": [
+        "run",
+        "--with-mocks",
+        "--in-memory?"
+      ],
       "problemMatcher": []
+    },
+    {
+      "type": "build-lcap",
+      "label": "LCAP Build: MKTest1",
+      "taskType": "Build",
+      "extensions": []
+    },
+    {
+      "type": "deploy-lcap",
+      "label": "LCAP Deploy: MKTest1",
+      "taskType": "Deploy",
+      "cfTarget": "lcap_jp_dev",
+      "cfEndpoint": "https://api.cf.jp10.hana.ondemand.com",
+      "cfOrg": "lcap_jp",
+      "cfSpace": "dev",
+      "extensions": [
+        "customextension.mtaext"
+      ],
+      "dependsOn": [
+        "LCAP Build: MKTest1"
+      ]
     }
   ]
 }

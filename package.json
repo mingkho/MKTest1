@@ -17,10 +17,14 @@
         "passport": "^0.6.0"
     },
     "devDependencies": {
-        "sqlite3": "^5.0.4"
+        "sqlite3": "^5.0.4",
+        "rimraf": "^3.0.2"
     },
     "scripts": {
-        "start": "cds run"
+        "start": "cds run",
+        "undeploy": "cf undeploy MKTest1 --delete-services --delete-service-keys --delete-service-brokers",
+        "build": "rimraf resources mta_archives && mbt build --mtar archive",
+        "deploy": "cf deploy mta_archives/archive.mtar --retries 1"
     },
     "eslintConfig": {
         "extends": "eslint:recommended",

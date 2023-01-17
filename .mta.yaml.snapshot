@@ -28,7 +28,7 @@ modules:
     build-parameters:
       builder: custom
       commands:
-        - mdk build --target module --ui5 --forceUpdate
+        - npx -p @sap/mdk-tools mdk build --target module --ui5 --forceUpdate
         - bash -c "cd Web/MDKModule && rm -rf .npmrc && npm install"
         - bash -c "cd Web/MDKModule && npm run build"
         - >-
