@@ -1,6 +1,6 @@
-# Getting Started 21
+# Getting Started 22
 
-Welcome to your new project. 4
+Welcome to your new project.
 
 It contains these folders and files, following our recommended project layout:
 
